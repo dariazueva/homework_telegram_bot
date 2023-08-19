@@ -1,4 +1,3 @@
-import logging
 import os
 import telegram
 from dotenv import load_dotenv
@@ -30,7 +29,7 @@ def check_tokens():
     try:
         if not PRACTICUM_TOKEN or not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
             raise ValueError('Отсуствуют переменные окружения.')
-    except ValueError as error:
+    except ValueError:
         exit()
 
 def send_message(bot, message):
@@ -43,22 +42,21 @@ def send_message(bot, message):
 
 def get_api_answer(timestamp):
     """Создание запроса к эндпоинту."""
-    response = requests.get(ENDPOINT, headers=HEADERS, params={'from_date': timestamp}).json()
-    if not response.get('homeworks'):
-        raise Exception(f'Эндпоинт {ENDPOINT} недоступен.')
+    response = requests.get(ENDPOINT, headers=HEADERS, params={'from_date': timestamp})
+    if response.status_code != 200:
+        raise requests.RequestException('Полученный статус ответа отличается от 200.')
+    response = response.json()
     return response
-
 
 def check_response(response):
     """Проверка ответа API."""
     if type(response) != dict:
         raise TypeError('Тип данных {type(response)} не соответсвует ожидаемому типу dict.')
-    elif type('homeworks') != list:
-        raise TypeError('Тип данных {type("homeworks")} не соответсвует ожидаемому типу list.')
-    elif 'homeworks' not in response:
-        raise KeyError('Ключа "homeworks" нет в ответе.')
-    elif 'current_time' not in response:
-        raise KeyError('Ключа "current_time" нет в ответе.')
+    elif ('homeworks' in response) and ('current-time in response'):
+        if type(response['homeworks']) != list:
+            raise TypeError('Тип данных {type("homeworks")} не соответсвует ожидаемому типу list.')
+        return response.get('homeworks')
+    raise KeyError('Подходящего ключа нет в ответе.')
 
 def parse_status(homework):
     """Извлечение информации из ответа API."""
