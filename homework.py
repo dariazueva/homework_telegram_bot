@@ -38,8 +38,8 @@ def check_tokens():
     try:
         if not PRACTICUM_TOKEN or not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
             raise ValueError('Отсуствуют переменные окружения.')
-    except ValueError as error:
-        logger.critical(error)
+    except ValueError:
+        logger.critical('Отсуствуют переменные окружения.')
         exit()
 
 def send_message(bot, message):
@@ -47,7 +47,7 @@ def send_message(bot, message):
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
         logger.debug('Удачная отправка сообщения в Telegram.')
-    except telegram.TelegramError as error:
+    except telegram.TelegramError:
         logger.error('Ошибка')
     return message
 
@@ -56,7 +56,7 @@ def get_api_answer(timestamp):
     try:
         response = requests.get(ENDPOINT, headers=HEADERS, params={'from_date': timestamp})
         if response.status_code != 200:
-            logger.error('Ошибка')
+            logger.error(f'Получен ответ с кодом состояние {response.status_code}')
             raise requests.RequestException('Полученный статус ответа отличается от 200.')
         response = response.json()
     except Exception as error:
@@ -67,12 +67,12 @@ def get_api_answer(timestamp):
 def check_response(response):
     """Проверка ответа API."""
     if type(response) != dict:
-        logger.error('Ошибка')
+        logger.error('Ответ API не соответствует ожидаемому типу данных dict.')
         raise TypeError('Тип данных {type(response)} не соответсвует ожидаемому типу dict.')
     elif ('homeworks' in response) and ('current-time in response'):
         logger.error('Ошибка')
         if type(response['homeworks']) != list:
-            logger.error('Ошибка')
+            logger.error('Ответ API с ключом словаря homeworks не соответствует ожидаемому типу данных list.')
             raise TypeError('Тип данных {type("homeworks")} не соответсвует ожидаемому типу list.')
         return response.get('homeworks')
     raise KeyError('Подходящего ключа нет в ответе.')
@@ -80,10 +80,10 @@ def check_response(response):
 def parse_status(homework):
     """Извлечение информации из ответа API."""
     if homework['status'] not in HOMEWORK_VERDICTS:
-        logger.error('Ошибка')
+        logger.error('Неизвестный статус.')
         raise KeyError('Статус не найден.')
     elif 'homework_name' not in homework:
-        logger.error('Ошибка')
+        logger.error('Отсуствует ключ "homework_name".')
         raise KeyError('Ключ "homework_name" не найден.')
     homework_name = homework['homework_name']
     verdict = HOMEWORK_VERDICTS[homework['status']]
@@ -95,6 +95,7 @@ def main():
     check_tokens()
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     timestamp = int(time.time())
+    
 
     while True:
         try:
@@ -106,8 +107,9 @@ def main():
 
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
-            ...
-        time.sleep(RETRY_PERIOD)
+            logger.error(message)
+        finally:
+            time.sleep(RETRY_PERIOD)
 
 
 if __name__ == '__main__':
