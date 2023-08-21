@@ -1,11 +1,11 @@
-import os
 import logging
-import telegram
-from dotenv import load_dotenv
+import os
 import time
-import requests
 from logging import StreamHandler
 
+import requests
+import telegram
+from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -13,7 +13,7 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 handler = StreamHandler()
-formatter=logging.Formatter('%(asctime)s, %(levelname)s, %(message)s')
+formatter = logging.Formatter('%(asctime)s, %(levelname)s, %(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
@@ -42,6 +42,7 @@ def check_tokens():
         logger.critical('Отсуствуют переменные окружения.')
         exit()
 
+
 def send_message(bot, message):
     """Отправка сообщения в Telegram чат."""
     try:
@@ -51,31 +52,40 @@ def send_message(bot, message):
         logger.error('Сбой при отправке сообщения в Telegram.')
     return message
 
+
 def get_api_answer(timestamp):
     """Создание запроса к эндпоинту."""
     try:
-        response = requests.get(ENDPOINT, headers=HEADERS, params={'from_date': timestamp})
+        response = requests.get(ENDPOINT, headers=HEADERS,
+                                params={'from_date': timestamp})
         if response.status_code != 200:
-            logger.error('Неожиданный статус домашней работы, обнаруженный в ответе API.')
-            raise requests.RequestException(f'Получен ответ с кодом состояние {response.status_code}')
+            logger.error('Неожиданный статус домашней работы,'
+                         'обнаруженный в ответе API.')
+            raise requests.RequestException(f'Получен ответ с кодом состояние'
+                                            f'{response.status_code}')
         response = response.json()
     except Exception as error:
         logger.error(error)
         raise Exception(error)
     return response
 
+
 def check_response(response):
     """Проверка ответа API."""
     if type(response) != dict:
         logger.error('Ответ API не соответствует ожидаемому типу данных dict.')
-        raise TypeError('Тип данных {type(response)} не соответсвует ожидаемому типу dict.')
+        raise TypeError('Тип данных {type(response)}'
+                        'не соответсвует ожидаемому типу dict.')
     elif ('homeworks' in response) and ('current_date' in response):
         if type(response['homeworks']) != list:
-            logger.error('Ответ API с ключом словаря homeworks не соответствует ожидаемому типу данных list.')
-            raise TypeError('Тип данных {type("homeworks")} не соответсвует ожидаемому типу list.')
+            logger.error('Ответ API с ключом словаря homeworks не'
+                         'соответствует ожидаемому типу данных list.')
+            raise TypeError('Тип данных {type("homeworks")} не'
+                            'соответсвует ожидаемому типу list.')
         return response.get('homeworks')
     logger.error('Отсутствуют ожидаемые ключи в ответе API.')
     raise KeyError('Подходящих ключей нет в ответе API.')
+
 
 def parse_status(homework):
     """Извлечение информации из ответа API."""
