@@ -48,7 +48,7 @@ def send_message(bot, message):
         bot.send_message(TELEGRAM_CHAT_ID, message)
         logger.debug('Удачная отправка сообщения в Telegram.')
     except telegram.TelegramError:
-        logger.error('Ошибка при отправке сообщения.')
+        logger.error('Сбой при отправке сообщения в Telegram.')
     return message
 
 def get_api_answer(timestamp):
@@ -56,8 +56,8 @@ def get_api_answer(timestamp):
     try:
         response = requests.get(ENDPOINT, headers=HEADERS, params={'from_date': timestamp})
         if response.status_code != 200:
-            logger.error(f'Получен ответ с кодом состояние {response.status_code}')
-            raise requests.RequestException('Полученный статус ответа отличается от 200.')
+            logger.error('Неожиданный статус домашней работы, обнаруженный в ответе API.')
+            raise requests.RequestException(f'Получен ответ с кодом состояние {response.status_code}')
         response = response.json()
     except Exception as error:
         logger.error(error)
@@ -74,8 +74,8 @@ def check_response(response):
             logger.error('Ответ API с ключом словаря homeworks не соответствует ожидаемому типу данных list.')
             raise TypeError('Тип данных {type("homeworks")} не соответсвует ожидаемому типу list.')
         return response.get('homeworks')
-    logger.error('Ключи словаря не соответствуют ожидаемому.')
-    raise KeyError('Подходящего ключа нет в ответе.')
+    logger.error('Отсутствуют ожидаемые ключи в ответе API.')
+    raise KeyError('Подходящих ключей нет в ответе API.')
 
 def parse_status(homework):
     """Извлечение информации из ответа API."""
@@ -107,7 +107,7 @@ def main():
                     send_message(bot, new_message)
                     previous_message = new_message
                 else:
-                    logger.error('Нет новых домашек в "homeworks".')
+                    logger.debug('Нет новых домашек в "homeworks".')
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
             logger.error(message)
