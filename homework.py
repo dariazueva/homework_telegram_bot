@@ -69,8 +69,8 @@ def check_response(response):
     if type(response) != dict:
         logger.error('Ответ API не соответствует ожидаемому типу данных dict.')
         raise TypeError('Тип данных {type(response)} не соответсвует ожидаемому типу dict.')
-    elif ('homeworks' in response) and ('current-time in response'):
-        logger.error('Ошибка')
+    elif ('homeworks' in response) and ('current_date' in response):
+        logger.error('Ключи словаря не соответствуют ожидаемому.')
         if type(response['homeworks']) != list:
             logger.error('Ответ API с ключом словаря homeworks не соответствует ожидаемому типу данных list.')
             raise TypeError('Тип данных {type("homeworks")} не соответсвует ожидаемому типу list.')
