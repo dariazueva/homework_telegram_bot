@@ -48,7 +48,7 @@ def send_message(bot, message):
         bot.send_message(TELEGRAM_CHAT_ID, message)
         logger.debug('Удачная отправка сообщения в Telegram.')
     except telegram.TelegramError:
-        logger.error('Ошибка')
+        logger.error('Ошибка при отправке сообщения.')
     return message
 
 def get_api_answer(timestamp):
@@ -70,11 +70,11 @@ def check_response(response):
         logger.error('Ответ API не соответствует ожидаемому типу данных dict.')
         raise TypeError('Тип данных {type(response)} не соответсвует ожидаемому типу dict.')
     elif ('homeworks' in response) and ('current_date' in response):
-        logger.error('Ключи словаря не соответствуют ожидаемому.')
         if type(response['homeworks']) != list:
             logger.error('Ответ API с ключом словаря homeworks не соответствует ожидаемому типу данных list.')
             raise TypeError('Тип данных {type("homeworks")} не соответсвует ожидаемому типу list.')
         return response.get('homeworks')
+    logger.error('Ключи словаря не соответствуют ожидаемому.')
     raise KeyError('Подходящего ключа нет в ответе.')
 
 def parse_status(homework):
@@ -95,19 +95,25 @@ def main():
     check_tokens()
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     timestamp = int(time.time())
-    
-
+    previous_message = None
+    previous_error = None
     while True:
         try:
             response = get_api_answer(timestamp)
-            check_response(response)
-            for homework in response['homeworks']:
-                message = parse_status(homework)
-                send_message(bot, message)
-
+            homework = check_response(response)
+            if homework:
+                new_message = parse_status(homework[0])
+                if new_message != previous_message:
+                    send_message(bot, new_message)
+                    previous_message = new_message
+                else:
+                    logger.error('Нет новых домашек в "homeworks".')
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
             logger.error(message)
+            if error != previous_error:
+                send_message(bot, message)
+                previous_error = error
         finally:
             time.sleep(RETRY_PERIOD)
 
