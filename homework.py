@@ -35,17 +35,13 @@ HOMEWORK_VERDICTS = {
 
 def check_tokens():
     """Проверка доступности переменных окружения."""
-    try:
-        if not PRACTICUM_TOKEN or not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
-            raise ValueError('Отсуствуют переменные окружения.')
-    except ValueError:
-        logger.critical('Отсуствуют переменные окружения.')
-        exit()
+    return all((PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID))
 
 
 def send_message(bot, message):
     """Отправка сообщения в Telegram чат."""
     try:
+        logger.debug('Начало отправки сообщения в Telegram.')
         bot.send_message(TELEGRAM_CHAT_ID, message)
         logger.debug('Удачная отправка сообщения в Telegram.')
     except telegram.TelegramError:
@@ -65,26 +61,25 @@ def get_api_answer(timestamp):
                                             f'{response.status_code}')
         response = response.json()
     except Exception as error:
-        logger.error(error)
         raise Exception(error)
     return response
 
 
 def check_response(response):
     """Проверка ответа API."""
-    if type(response) != dict:
+    if isinstance(response, dict) == False:
         logger.error('Ответ API не соответствует ожидаемому типу данных dict.')
-        raise TypeError('Тип данных {type(response)}'
-                        'не соответсвует ожидаемому типу dict.')
-    elif ('homeworks' in response) and ('current_date' in response):
-        if type(response['homeworks']) != list:
-            logger.error('Ответ API с ключом словаря homeworks не'
-                         'соответствует ожидаемому типу данных list.')
-            raise TypeError('Тип данных {type("homeworks")} не'
-                            'соответсвует ожидаемому типу list.')
-        return response.get('homeworks')
-    logger.error('Отсутствуют ожидаемые ключи в ответе API.')
-    raise KeyError('Подходящих ключей нет в ответе API.')
+        raise TypeError(f'Тип данных {type(response)}'
+                        f'не соответсвует ожидаемому типу dict.')
+    if 'homeworks' not in response:
+        raise KeyError('Ключа "homeworks" нет в ответе API.')
+    if 'current_date' not in response:
+        raise KeyError('Ключа "current_date" нет в ответе API.')
+    homeworks = response.get('homeworks')
+    if isinstance(homeworks, list) == False:
+        raise TypeError(f'Тип данных {type("homeworks")} не'
+                        f'соответсвует ожидаемому типу list.')
+    return homeworks
 
 
 def parse_status(homework):
@@ -102,7 +97,9 @@ def parse_status(homework):
 
 def main():
     """Основная логика работы бота."""
-    check_tokens()
+    if not check_tokens():
+        logger.critical('Отсуствуют переменные окружения.')
+        exit()
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     timestamp = int(time.time())
     previous_message = None
