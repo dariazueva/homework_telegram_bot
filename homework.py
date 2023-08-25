@@ -67,7 +67,7 @@ def get_api_answer(timestamp):
 
 def check_response(response):
     """Проверка ответа API."""
-    if isinstance(response, dict) == False:
+    if isinstance(response, dict) is False:
         logger.error('Ответ API не соответствует ожидаемому типу данных dict.')
         raise TypeError(f'Тип данных {type(response)}'
                         f'не соответсвует ожидаемому типу dict.')
@@ -76,7 +76,7 @@ def check_response(response):
     if 'current_date' not in response:
         raise KeyError('Ключа "current_date" нет в ответе API.')
     homeworks = response.get('homeworks')
-    if isinstance(homeworks, list) == False:
+    if isinstance(homeworks, list) is False:
         raise TypeError(f'Тип данных {type("homeworks")} не'
                         f'соответсвует ожидаемому типу list.')
     return homeworks
@@ -84,14 +84,16 @@ def check_response(response):
 
 def parse_status(homework):
     """Извлечение информации из ответа API."""
-    if homework['status'] not in HOMEWORK_VERDICTS:
-        logger.error('Неизвестный статус.')
-        raise KeyError('Статус не найден.')
-    elif 'homework_name' not in homework:
-        logger.error('Отсуствует ключ "homework_name".')
-        raise KeyError('Ключ "homework_name" не найден.')
-    homework_name = homework['homework_name']
-    verdict = HOMEWORK_VERDICTS[homework['status']]
+    homework_name = homework.get('homework_name')
+    homework_status = homework.get('status')
+    if 'homework_name' not in homework:
+        raise KeyError('Ключа "homework_name" нет в ответе API.')
+    if 'status' not in homework:
+        raise KeyError('Ключа "status" нет в ответе API.')
+    if homework_status not in HOMEWORK_VERDICTS:
+        raise KeyError(f'Статуса {homework_status}'
+                       f'нет в словаре HOMEWORK_VERDICTS.')
+    verdict = HOMEWORK_VERDICTS[homework_status]
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
 
