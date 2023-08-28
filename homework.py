@@ -1,11 +1,14 @@
 import logging
 import os
 import time
+from http import HTTPStatus
 from logging import StreamHandler
 
 import requests
 import telegram
 from dotenv import load_dotenv
+
+from exceptions import ResponseException
 
 load_dotenv()
 
@@ -52,23 +55,20 @@ def send_message(bot, message):
 def get_api_answer(timestamp):
     """Создание запроса к эндпоинту."""
     try:
+        logger.debug('Начало запроса к API.')
         response = requests.get(ENDPOINT, headers=HEADERS,
                                 params={'from_date': timestamp})
-        if response.status_code != 200:
-            logger.error('Неожиданный статус домашней работы,'
-                         'обнаруженный в ответе API.')
-            raise requests.RequestException(f'Получен ответ с кодом состояние'
-                                            f'{response.status_code}')
-        response = response.json()
     except Exception as error:
-        raise Exception(error)
-    return response
+        raise ResponseException(error)
+    if response.status_code != HTTPStatus.OK:
+        raise requests.RequestException(f'Получен ответ с кодом состояние'
+                                        f'{response.status_code}')
+    return response.json()
 
 
 def check_response(response):
     """Проверка ответа API."""
     if isinstance(response, dict) is False:
-        logger.error('Ответ API не соответствует ожидаемому типу данных dict.')
         raise TypeError(f'Тип данных {type(response)}'
                         f'не соответсвует ожидаемому типу dict.')
     if 'homeworks' not in response:
