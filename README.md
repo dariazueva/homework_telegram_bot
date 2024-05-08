@@ -23,7 +23,7 @@ python, python-telegram-bot
 Клонировать репозиторий и перейти в него в командной строке:
 
 ```
-git@github.com:dariazueva/homework_bot.git
+git clone git@github.com:dariazueva/homework_bot.git
 ```
 
 ```
